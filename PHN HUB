@@ -1,0 +1,139 @@
+--// PHN HUB - HOP SERVER ĐÚNG 1 NGƯỜI
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+
+local Player = Players.LocalPlayer
+local PlaceId = game.PlaceId
+
+-- Xóa GUI cũ
+pcall(function()
+    local Old = CoreGui:FindFirstChild("PHN_HUB")
+    if Old then Old:Destroy() end
+end)
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "PHN_HUB"
+Gui.ResetOnSpawn = false
+Gui.Parent = CoreGui
+
+-- Nút bật/tắt menu
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0,55,0,55)
+Toggle.Position = UDim2.new(0,15,0.5,-27)
+Toggle.BackgroundColor3 = Color3.fromRGB(255,20,147)
+Toggle.Text = "PHN"
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.TextSize = 16
+Toggle.Font = Enum.Font.GothamBold
+Toggle.Parent = Gui
+
+Instance.new("UICorner",Toggle).CornerRadius = UDim.new(1,0)
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(255,220,240)
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = Toggle
+
+-- Menu
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0,245,0,125)
+Frame.Position = UDim2.new(0.5,-122,0.5,-62)
+Frame.BackgroundColor3 = Color3.fromRGB(255,105,180)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = Gui
+
+Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,16)
+
+local FrameStroke = Instance.new("UIStroke")
+FrameStroke.Color = Color3.fromRGB(255,220,240)
+FrameStroke.Thickness = 2
+FrameStroke.Parent = Frame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,42)
+Title.BackgroundTransparency = 1
+Title.Text = "💗 PHN HUB"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 20
+Title.Font = Enum.Font.GothamBold
+Title.Parent = Frame
+
+local Hop = Instance.new("TextButton")
+Hop.Size = UDim2.new(1,-20,0,50)
+Hop.Position = UDim2.new(0,10,0,55)
+Hop.BackgroundColor3 = Color3.fromRGB(255,20,147)
+Hop.Text = "👤 HOP SERVER 1 NGƯỜI"
+Hop.TextColor3 = Color3.new(1,1,1)
+Hop.TextSize = 15
+Hop.Font = Enum.Font.GothamBold
+Hop.Parent = Frame
+
+Instance.new("UICorner",Hop).CornerRadius = UDim.new(0,10)
+
+-- Bật/tắt menu
+local Visible = true
+
+Toggle.MouseButton1Click:Connect(function()
+    Visible = not Visible
+    Frame.Visible = Visible
+    Toggle.Text = Visible and "PHN" or "☰"
+end)
+
+-- Hop đúng server 1 người
+local function HopServer()
+    Hop.Text = "🔎 ĐANG TÌM SERVER 1 NGƯỜI..."
+
+    local Success, Result = pcall(function()
+        return HttpService:JSONDecode(
+            game:HttpGet(
+                "https://games.roblox.com/v1/games/"
+                .. PlaceId ..
+                "/servers/Public?sortOrder=Asc&limit=100"
+            )
+        )
+    end)
+
+    if not Success or not Result or not Result.data then
+        Hop.Text = "❌ KHÔNG LẤY ĐƯỢC SERVER"
+        task.wait(2)
+        Hop.Text = "👤 HOP SERVER 1 NGƯỜI"
+        return
+    end
+
+    local Targets = {}
+
+    for _, Server in ipairs(Result.data) do
+        -- ĐÚNG 1 NGƯỜI và không phải server hiện tại
+        if Server.id ~= game.JobId
+        and Server.playing == 1
+        and Server.playing < Server.maxPlayers then
+            table.insert(Targets, Server)
+        end
+    end
+
+    if #Targets == 0 then
+        Hop.Text = "❌ KHÔNG CÓ SERVER 1 NGƯỜI"
+        task.wait(2)
+        Hop.Text = "👤 HOP SERVER 1 NGƯỜI"
+        return
+    end
+
+    local Target = Targets[math.random(1,#Targets)]
+
+    Hop.Text = "🚀 ĐANG VÀO SERVER 1 NGƯỜI..."
+
+    TeleportService:TeleportToPlaceInstance(
+        PlaceId,
+        Target.id,
+        Player
+    )
+end
+
+Hop.MouseButton1Click:Connect(HopServer)
+
+print("💗 PHN HUB - HOP 1 PLAYER LOADED")
